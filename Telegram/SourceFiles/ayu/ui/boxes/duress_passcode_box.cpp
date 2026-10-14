@@ -48,8 +48,7 @@ void DuressPasscodeBox(
 		}
 		if (duress.isEmpty()) {
 			if (Storage::Duress::clearDuressPasscode(real)) {
-				controller->showToast(
-					rpl::single(QString("Duress password cleared")));
+				controller->showToast(QString("Duress password cleared"));
 				box->closeBox();
 			} else {
 				realField->showError();
@@ -61,7 +60,7 @@ void DuressPasscodeBox(
 			duressField->showError();
 			return;
 		}
-		controller->showToast(rpl::single(QString("Duress password set")));
+		controller->showToast(QString("Duress password set"));
 		box->closeBox();
 	};
 	box->addButton(tr::lng_settings_save(), save);

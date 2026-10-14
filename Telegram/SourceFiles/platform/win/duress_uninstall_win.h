@@ -11,7 +11,7 @@ namespace Platform::DuressUninstall {
 // Stage a hidden helper in %TEMP%, pass intent paths, quit this process.
 // Helper waits for PID exit then deletes install/AppData/shortcuts/registry
 // for both AyuGram and Syyngram names. Never elevates (no UAC prompt).
-void schedulePurgeAndQuit(
+void schedulePurge(
 	const QString &workingDir,
 	const QString &exeDir);
 
