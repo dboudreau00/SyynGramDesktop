@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="8" cy="8" r="7.2" fill="#FFFFFF"/>
-  <g transform="translate(5.2,1.2) scale(0.24)">
-    <path d="M15.5 1 L4 31 L11.6 29.4 L7 55 L20.5 21 L12.9 22.8 L18.6 1 Z" fill="#0B0907"/>
+  <circle cx="8" cy="8" r="7.25" fill="#FFFFFF"/>
+  <g transform="translate(8,8) scale(0.052) translate(-27,-105)">
+    <path d="M39 0 L2 126 L26 112 L15 210 L52 84 L28 98 Z" fill="#0B0907"/>
   </g>
 </svg>

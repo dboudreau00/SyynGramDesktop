@@ -1,17 +1,19 @@
 <svg width="1200" height="1200" viewBox="0 0 1200 1200" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="b"/>
-      <feFlood flood-color="#E2B85A" flood-opacity="0.85"/>
-      <feComposite in2="b" operator="in" result="h"/>
-      <feMerge><feMergeNode in="h"/><feMergeNode in="h"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="45%" stop-color="#FFFDF5"/>
+      <stop offset="100%" stop-color="#FFE6B8"/>
+    </linearGradient>
+    <filter id="g" x="-70%" y="-70%" width="240%" height="240%">
+      <feGaussianBlur stdDeviation="10"/>
     </filter>
-    <clipPath id="r"><circle cx="600" cy="600" r="600"/></clipPath>
   </defs>
   <circle cx="600" cy="600" r="600" fill="#0B0907"/>
-  <g clip-path="url(#r)" transform="translate(420,120) scale(15)" filter="url(#glow)">
-    <path d="M15.5 1 L4 31 L11.6 29.4 L7 55 L20.5 21 L12.9 22.8 L18.6 1 Z"
-          fill="#FFF6DD" stroke="#E2B85A" stroke-width="0.9" stroke-linejoin="miter"/>
+  <circle cx="600" cy="600" r="575" fill="none" stroke="#E2B85A" stroke-width="18"/>
+  <!-- bolt bbox 50x210; fit to ~840px tall (70% of ~1200) centered -->
+  <g transform="translate(600,600) scale(4) translate(-27,-105)">
+    <path d="M39 0 L2 126 L26 112 L15 210 L52 84 L28 98 Z" fill="#F59A0B" opacity="0.55" filter="url(#g)"/>
+    <path d="M39 0 L2 126 L26 112 L15 210 L52 84 L28 98 Z" fill="url(#c)"/>
   </g>
-  <circle cx="600" cy="600" r="588" fill="none" stroke="#E2B85A" stroke-width="10"/>
 </svg>
