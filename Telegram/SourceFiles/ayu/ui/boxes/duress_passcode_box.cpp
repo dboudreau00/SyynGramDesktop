@@ -3,6 +3,8 @@
 #include "storage/storage_duress.h"
 #include "lang_auto.h"
 #include "ui/layers/generic_box.h"
+#include "ui/rp_widget.h"
+#include "ui/ui_utility.h"
 #include "ui/widgets/fields/password_input.h"
 #include "ui/widgets/labels.h"
 #include "window/window_session_controller.h"
@@ -10,26 +12,42 @@
 #include "styles/style_boxes.h"
 
 namespace AyuUi {
+namespace {
+
+not_null<Ui::PasswordInput*> AddPasswordField(
+		not_null<Ui::GenericBox*> box,
+		rpl::producer<QString> placeholder) {
+	const auto &st = st::defaultInputField;
+	auto container = object_ptr<Ui::RpWidget>(box.get());
+	container->resize(container->width(), st.heightMin);
+	const auto field = Ui::CreateChild<Ui::PasswordInput>(
+		container.data(),
+		st,
+		std::move(placeholder));
+	container->geometryValue(
+	) | rpl::on_next([=](const QRect &r) {
+		field->resize(r.width(), field->height());
+		field->moveToLeft(0, 0);
+	}, container->lifetime());
+	box->addRow(std::move(container));
+	return field;
+}
+
+} // namespace
 
 void DuressPasscodeBox(
 		not_null<Ui::GenericBox*> box,
 		not_null<Window::SessionController*> controller) {
 	box->setTitle(rpl::single(QString("Duress password")));
-	const auto realField = box->addRow(
-		object_ptr<Ui::PasswordInput>(
-			box.get(),
-			st::defaultInputField,
-			rpl::single(QString("Current local passcode"))));
-	const auto duressField = box->addRow(
-		object_ptr<Ui::PasswordInput>(
-			box.get(),
-			st::defaultInputField,
-			rpl::single(QString("Duress password"))));
-	const auto confirmField = box->addRow(
-		object_ptr<Ui::PasswordInput>(
-			box.get(),
-			st::defaultInputField,
-			rpl::single(QString("Confirm duress password"))));
+	const auto realField = AddPasswordField(
+		box,
+		rpl::single(QString("Current local passcode")));
+	const auto duressField = AddPasswordField(
+		box,
+		rpl::single(QString("Duress password")));
+	const auto confirmField = AddPasswordField(
+		box,
+		rpl::single(QString("Confirm duress password")));
 	box->addRow(object_ptr<Ui::FlatLabel>(
 		box.get(),
 		rpl::single(QString(

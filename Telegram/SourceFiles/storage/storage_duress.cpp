@@ -5,6 +5,7 @@ Phase 2: duress password classify / wipe / purge orchestration.
 #include "storage/storage_duress.h"
 
 #include "storage/storage_duress_inventory.h"
+#include "storage/storage_domain.h"
 #include "storage/storage_secure_wipe.h"
 #include "storage/details/storage_file_utilities.h"
 #include "core/application.h"
