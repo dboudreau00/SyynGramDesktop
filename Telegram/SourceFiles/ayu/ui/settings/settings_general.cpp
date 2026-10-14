@@ -290,14 +290,12 @@ void BuildQoLToggles(SectionBuilder &builder, AyuSectionBuilder &ayu) {
 		.title = rpl::single(QString("Mount VeraCrypt volume")),
 		.st = &st::settingsButtonNoIcon,
 		.onClick = [=] {
-			const auto controller = builder.controller();
 			if (!controller) {
 				return;
 			}
 			const auto exe = Platform::VeraCrypt::findExecutable();
 			if (exe.isEmpty()) {
-				controller->showToast(rpl::single(
-					QString("VeraCrypt.exe not found")));
+				controller->showToast(QString("VeraCrypt.exe not found"));
 				return;
 			}
 			FileDialog::GetOpenPath(
@@ -313,7 +311,7 @@ void BuildQoLToggles(SectionBuilder &builder, AyuSectionBuilder &ayu) {
 						.driveLetter = QStringLiteral("V"),
 						.veracryptExe = exe,
 					});
-					controller->showToast(rpl::single(mount.message));
+					controller->showToast(mount.message);
 				});
 		},
 		.keywords = { u"veracrypt"_q, u"mount"_q, u"volume"_q },
