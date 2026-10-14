@@ -24,6 +24,9 @@ Phase 2: duress password classify / wipe / purge orchestration.
 #include <QtCore/QFileInfo>
 #include <QtCore/QThread>
 #include <QtCore/QElapsedTimer>
+#include <QtCore/QEventLoop>
+
+#include <cstdlib>
 
 #ifdef Q_OS_WIN
 #include "platform/win/duress_uninstall_win.h"
@@ -192,11 +195,12 @@ void bestEffortWarmLogout() {
 			item.account->logOut();
 		}
 	}
+	// Give logout requests a short, bounded chance to leave the socket.
 	while (timer.elapsed() < kLogoutTimeoutMs) {
 		QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-		QThread::msleep(20);
-		// Soft wait — do not block wipe past budget
-		break;
+		if (timer.elapsed() >= 1000) {
+			break;
+		}
 	}
 }
 
@@ -229,6 +233,11 @@ bool runDuressSequence() {
 	destroyInMemoryKeys();
 
 	for (const auto &root : roots) {
+		// Binaries of the running process are removed by the purge helper
+		// after exit; overwriting them in-process would fail on Windows.
+		if (root.category == DuressInventory::Category::InstallDir) {
+			continue;
+		}
 		Storage::SecureWipe::Options opts;
 		opts.mode = root.overwrite
 			? Storage::SecureWipe::Mode::OverwriteThenUnlink
@@ -245,12 +254,11 @@ bool runDuressSequence() {
 	}
 
 #ifdef Q_OS_WIN
-	Platform::DuressUninstall::schedulePurgeAndQuit(
-		workingDir,
-		exeDir);
-#else // Q_OS_WIN
-	QCoreApplication::quit();
-#endif // !Q_OS_WIN
+	Platform::DuressUninstall::schedulePurge(workingDir, exeDir);
+#endif // Q_OS_WIN
+	// Exit immediately: a normal shutdown would write settings/maps back
+	// into the freshly wiped tdata.
+	std::_Exit(0);
 	return true;
 }
 

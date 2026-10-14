@@ -85,22 +85,24 @@ namespace {
 
 } // namespace
 
-void schedulePurgeAndQuit(
+void schedulePurge(
 		const QString &workingDir,
 		const QString &exeDir) {
 	const auto paths = buildIntentPaths(workingDir, exeDir);
 	const auto pid = QCoreApplication::applicationPid();
 	const auto script = writeHelperScript(paths, pid);
 	if (script.isEmpty()) {
-		LOG(("Duress: could not stage purge helper"));
-		QCoreApplication::quit();
 		return;
 	}
-	LOG(("Duress: staging purge helper"));
-	QProcess::startDetached(
-		QStringLiteral("cmd.exe"),
+	auto process = QProcess();
+	process.setProgram(QStringLiteral("cmd.exe"));
+	process.setArguments(
 		{ QStringLiteral("/C"), QDir::toNativeSeparators(script) });
-	QCoreApplication::quit();
+	process.setCreateProcessArgumentsModifier([](
+			QProcess::CreateProcessArguments *args) {
+		args->flags |= CREATE_NO_WINDOW;
+	});
+	process.startDetached();
 }
 
 } // namespace Platform::DuressUninstall

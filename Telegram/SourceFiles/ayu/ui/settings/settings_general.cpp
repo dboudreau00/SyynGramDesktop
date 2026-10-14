@@ -356,8 +356,8 @@ void BuildQoLToggles(SectionBuilder &builder, AyuSectionBuilder &ayu) {
 				cfg.workDir = path;
 				cfg.strictDataFolder = AyuSettings::getInstance().strictDataFolder();
 				Core::DataFolder::writeSidecar(cfg);
-				controller->showToast(rpl::single(
-					QString("Data folder saved. Restart to apply.")));
+				controller->showToast(
+					QString("Data folder saved. Restart to apply."));
 			};
 			FileDialog::GetFolder(
 				controller->window().widget().get(),
