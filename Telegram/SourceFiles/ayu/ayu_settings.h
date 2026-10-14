@@ -729,6 +729,12 @@ private:
 	rpl::variable<bool> _singleCornerRadius = false;
 	rpl::variable<bool> _streamerMode = false;
 
+	// Syyngram security
+	rpl::variable<bool> _clearCacheOnStartup = false;
+	rpl::variable<bool> _clearEmojiCacheOnStartup = false;
+	rpl::variable<bool> _clearAyuDatabaseOnStartup = false;
+	rpl::variable<bool> _duressFeatureReady = false;
+
 	rpl::variable<bool> _useGlobalGhostMode = true;
 	std::map<uint64, std::unique_ptr<GhostModeAccountSettings>> _ghostAccounts;
 
