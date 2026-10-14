@@ -1309,6 +1309,11 @@ void from_json(const nlohmann::json &j, AyuSettings &s) {
 	s._avatarCorners = j.value("avatarCorners", defaults._avatarCorners.current());
 	s._singleCornerRadius = j.value("singleCornerRadius", defaults._singleCornerRadius.current());
 	s._streamerMode = j.value("streamerMode", defaults._streamerMode.current());
+	s._clearCacheOnStartup = j.value("clearCacheOnStartup", defaults._clearCacheOnStartup.current());
+	s._clearEmojiCacheOnStartup = j.value("clearEmojiCacheOnStartup", defaults._clearEmojiCacheOnStartup.current());
+	s._clearAyuDatabaseOnStartup = j.value("clearAyuDatabaseOnStartup", defaults._clearAyuDatabaseOnStartup.current());
+	s._strictDataFolder = j.value("strictDataFolder", defaults._strictDataFolder.current());
+	s._duressFeatureReady = j.value("duressFeatureReady", defaults._duressFeatureReady.current());
 
 	if (j.contains("messageShotSettings") && j["messageShotSettings"].is_object()) {
 		j["messageShotSettings"].get_to(s._messageShotSettings);
