@@ -197,6 +197,27 @@ ResolveStatus applySidecarWorkDir(bool hasCliWorkDir) {
 	return ResolveStatus::SidecarUnavailable;
 }
 
+bool promptStrictUnavailable(const QString &workDir) {
+	const auto text = QString(
+		"The data folder is not available:\n\n%1\n\n"
+		"Strict data folder is on, so Syyngram will not start with a "
+		"default profile. Mount the volume (for example in VeraCrypt) "
+		"and press Retry, or press Cancel to exit."
+	).arg(QDir::toNativeSeparators(workDir));
+#ifdef Q_OS_WIN
+	const auto wide = text.toStdWString();
+	const auto result = MessageBoxW(
+		nullptr,
+		wide.c_str(),
+		L"Syyngram",
+		MB_RETRYCANCEL | MB_ICONWARNING | MB_SETFOREGROUND);
+	return (result == IDRETRY);
+#else // Q_OS_WIN
+	fprintf(stderr, "%s\n", text.toUtf8().constData());
+	return false;
+#endif // !Q_OS_WIN
+}
+
 bool startupBlocked() {
 	return gStartupBlocked;
 }

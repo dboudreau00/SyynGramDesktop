@@ -368,7 +368,12 @@ void start() {
 	// CLI -workdir still wins via validateCustomWorkingDir() below.
 	if (!launcher.customWorkingDir()) {
 		using Core::DataFolder::ResolveStatus;
-		const auto status = Core::DataFolder::applySidecarWorkDir(false);
+		auto status = Core::DataFolder::applySidecarWorkDir(false);
+		while (status == ResolveStatus::StrictUnavailable
+			&& Core::DataFolder::promptStrictUnavailable(
+				Core::DataFolder::readSidecar().workDir)) {
+			status = Core::DataFolder::applySidecarWorkDir(false);
+		}
 		if (status == ResolveStatus::StrictUnavailable) {
 			delete LogsData;
 			LogsData = nullptr;

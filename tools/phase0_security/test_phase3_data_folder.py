@@ -26,5 +26,15 @@ class Phase3DataFolder(unittest.TestCase):
         self.assertFalse(missing.exists())
         # C++ applySidecarWorkDir returns StrictUnavailable and Logs::start returns early.
 
+    def test_strict_missing_volume_prompt_wired(self):
+        """Source contract: Retry/Cancel prompt loop and launcher hard stop."""
+        src = Path(__file__).resolve().parents[2] / "Telegram" / "SourceFiles"
+        logs = (src / "logs.cpp").read_text(encoding="utf-8")
+        launcher = (src / "core" / "launcher.cpp").read_text(encoding="utf-8")
+        folder = (src / "core" / "data_folder.cpp").read_text(encoding="utf-8")
+        self.assertIn("promptStrictUnavailable", logs)
+        self.assertIn("MB_RETRYCANCEL", folder)
+        self.assertIn("startupBlocked()", launcher)
+
 if __name__ == "__main__":
     unittest.main()

@@ -39,4 +39,9 @@ struct SidecarConfig {
 [[nodiscard]] bool startupBlocked();
 void clearStartupBlocked();
 
+// Strict folder missing at startup (e.g. VeraCrypt volume not mounted).
+// Shows a native Retry / Cancel prompt naming the folder; returns true
+// when the user chose Retry. No Qt application object is required.
+[[nodiscard]] bool promptStrictUnavailable(const QString &workDir);
+
 } // namespace Core::DataFolder
