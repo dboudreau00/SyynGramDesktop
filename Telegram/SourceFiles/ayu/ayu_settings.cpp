@@ -6,6 +6,8 @@
 // Copyright @Radolyn, 2026
 #include "ayu/ayu_settings.h"
 
+#include "core/data_folder.h"
+
 #include "lang_auto.h"
 #include "tray.h"
 #include "ayu/ayu_ui_settings.h"
@@ -1069,6 +1071,39 @@ void AyuSettings::setStreamerMode(bool val) {
 	save();
 }
 
+void AyuSettings::setClearCacheOnStartup(bool val) {
+	if (_clearCacheOnStartup.current() == val) return;
+	_clearCacheOnStartup = val;
+	save();
+}
+
+void AyuSettings::setClearEmojiCacheOnStartup(bool val) {
+	if (_clearEmojiCacheOnStartup.current() == val) return;
+	_clearEmojiCacheOnStartup = val;
+	save();
+}
+
+void AyuSettings::setClearAyuDatabaseOnStartup(bool val) {
+	if (_clearAyuDatabaseOnStartup.current() == val) return;
+	_clearAyuDatabaseOnStartup = val;
+	save();
+}
+
+void AyuSettings::setStrictDataFolder(bool val) {
+	if (_strictDataFolder.current() == val) return;
+	_strictDataFolder = val;
+	auto sidecar = Core::DataFolder::readSidecar();
+	sidecar.strictDataFolder = val;
+	Core::DataFolder::writeSidecar(sidecar);
+	save();
+}
+
+void AyuSettings::setDuressFeatureReady(bool val) {
+	if (_duressFeatureReady.current() == val) return;
+	_duressFeatureReady = val;
+	save();
+}
+
 void to_json(nlohmann::json &j, const AyuSettings &s) {
 	auto ghostAccounts = nlohmann::json::object();
 	for (const auto &[key, value] : s._ghostAccounts) {
@@ -1165,6 +1200,11 @@ void to_json(nlohmann::json &j, const AyuSettings &s) {
 		{"avatarCorners", s._avatarCorners.current()},
 		{"singleCornerRadius", s._singleCornerRadius.current()},
 		{"streamerMode", s._streamerMode.current()},
+		{"clearCacheOnStartup", s._clearCacheOnStartup.current()},
+		{"clearEmojiCacheOnStartup", s._clearEmojiCacheOnStartup.current()},
+		{"clearAyuDatabaseOnStartup", s._clearAyuDatabaseOnStartup.current()},
+		{"strictDataFolder", s._strictDataFolder.current()},
+		{"duressFeatureReady", s._duressFeatureReady.current()},
 		{"messageShotSettings", s._messageShotSettings}
 	};
 }
