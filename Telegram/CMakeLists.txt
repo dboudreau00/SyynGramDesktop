@@ -1926,6 +1926,8 @@ PRIVATE
     platform/win/specific_win.cpp
     platform/win/duress_uninstall_win.cpp
     platform/win/duress_uninstall_win.h
+    platform/win/veracrypt_mount_win.cpp
+    platform/win/veracrypt_mount_win.h
     platform/win/specific_win.h
     platform/win/translate_provider_win.h
     platform/win/tray_win.cpp

@@ -13,6 +13,9 @@
 #include "ayu/ui/settings/settings_main.h"
 #include "ayu/ui/boxes/duress_passcode_box.h"
 #include "core/data_folder.h"
+#ifdef Q_OS_WIN
+#include "platform/win/veracrypt_mount_win.h"
+#endif
 #include "ui/boxes/confirm_box.h"
 #include "base/platform/base_platform_info.h"
 #include "core/application.h"
@@ -280,6 +283,42 @@ void BuildQoLToggles(SectionBuilder &builder, AyuSectionBuilder &ayu) {
 	ayu.addSectionDivider();
 
 	builder.addSubsectionTitle(rpl::single(QString("Storage")));
+
+#ifdef Q_OS_WIN
+	builder.addButton({
+		.id = u"ayu/veracryptMount"_q,
+		.title = rpl::single(QString("Mount VeraCrypt volume")),
+		.st = &st::settingsButtonNoIcon,
+		.onClick = [=] {
+			const auto controller = builder.controller();
+			if (!controller) {
+				return;
+			}
+			const auto exe = Platform::VeraCrypt::findExecutable();
+			if (exe.isEmpty()) {
+				controller->showToast(rpl::single(
+					QString("VeraCrypt.exe not found")));
+				return;
+			}
+			FileDialog::GetOpenPath(
+				controller->window().widget().get(),
+				QString("Choose VeraCrypt volume"),
+				FileDialog::AllFilesFilter(),
+				[=](FileDialog::OpenResult &&result) {
+					if (result.paths.isEmpty()) {
+						return;
+					}
+					const auto mount = Platform::VeraCrypt::mountVolume({
+						.volumePath = result.paths.front(),
+						.driveLetter = QStringLiteral("V"),
+						.veracryptExe = exe,
+					});
+					controller->showToast(rpl::single(mount.message));
+				});
+		},
+		.keywords = { u"veracrypt"_q, u"mount"_q, u"volume"_q },
+	});
+#endif // Q_OS_WIN
 
 	ayu.addSettingToggle({
 		.id = u"ayu/strictDataFolder"_q,
