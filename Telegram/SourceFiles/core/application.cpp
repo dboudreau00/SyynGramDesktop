@@ -964,7 +964,7 @@ void Application::startLocalStorage() {
 			.clearEmoji = early.clearEmojiCacheOnStartup,
 			.clearAyuDatabase = early.clearAyuDatabaseOnStartup,
 		});
-		DEBUG_LOG(("AyuCacheCleanup(Phase0 stub): removed=%1 skipped=%2"
+		DEBUG_LOG(("AyuCacheCleanup: removed=%1 skipped=%2"
 			).arg(cleanup.removed
 			).arg(cleanup.skipped));
 	}

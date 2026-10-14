@@ -1,10 +1,11 @@
 /*
 This file is part of AyuGram / SyyngramDesktop.
-Phase 0 scaffolding; Phase 1 implements startup cache removal.
+Phase 1: startup cache removal (unlink-only, Windows retries via SecureWipe).
 */
 #pragma once
 
 #include <QtCore/QString>
+#include <QtCore/QStringList>
 
 namespace Ayu::CacheCleanup {
 
@@ -19,7 +20,14 @@ struct Result {
 	int skipped = 0;
 };
 
-// Phase 0: no-op returning zeros. Phase 1 deletes cache/media_cache/temp.
+// Collect absolute paths under {workingDir}/tdata that match the wipe set.
+// Never includes key_*, account maps, or ayu_settings.json.
+[[nodiscard]] QStringList collectTargets(
+	const QString &workingDir,
+	const Options &options);
+
+// Delete cache/media_cache/temp (and optional emoji / ayudata.db) before DBs open.
+// Uses Storage::SecureWipe::UnlinkOnly with retries. Failures are skipped.
 [[nodiscard]] Result run(const QString &workingDir, const Options &options);
 
 } // namespace Ayu::CacheCleanup

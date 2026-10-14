@@ -24,3 +24,15 @@ Manual checks after a Win build:
 2. Point sidecar at an existing folder → that folder becomes `cWorkingDir()`.
 3. `-workdir` CLI overrides sidecar.
 4. Set `"clearCacheOnStartup": true` in `tdata/ayu_settings.json` → log shows Phase 0 stub cleanup (no deletion until Phase 1).
+
+## Phase 1 — startup cache cleanup
+
+```bash
+python3 tools/phase0_security/test_phase1_cache_cleanup.py -v
+```
+
+Settings UI: AyuGram Preferences → General → Storage  
+(`clearCacheOnStartup`, `clearEmojiCacheOnStartup`, `clearAyuDatabaseOnStartup`).
+
+Cleanup runs in `Application::startLocalStorage` before `Local::start()`, using
+`Storage::SecureWipe` unlink-only mode (3 retries / 100ms — Windows-friendly).
