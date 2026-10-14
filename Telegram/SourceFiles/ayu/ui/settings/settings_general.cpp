@@ -305,7 +305,6 @@ void BuildQoLToggles(SectionBuilder &builder, AyuSectionBuilder &ayu) {
 			return cWorkingDir();
 		}()),
 		.onClick = [=] {
-			const auto controller = builder.controller();
 			if (!controller) {
 				return;
 			}
