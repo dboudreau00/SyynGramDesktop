@@ -7,7 +7,9 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "core/launcher.h"
 
+#include "ayu/ayu_settings.h"
 #include "core/data_folder.h"
+#include "storage/storage_vault.h"
 
 #include "platform/platform_launcher.h"
 #include "platform/platform_specific.h"
@@ -397,9 +399,12 @@ int Launcher::exec() {
 
 	// Must be started before Platform is started.
 	Logs::start();
-	if (Core::DataFolder::startupBlocked()) {
-		// Strict data folder missing and the user cancelled: never fall
-		// back to a default profile.
+	// Strict data folder missing and the user cancelled: never fall back to a default profile.
+	// The cleanup and quit modes never read the profile, so they must not ask for the vault password.
+	if (Core::DataFolder::startupBlocked()
+		|| ((cLaunchMode() != LaunchModeCleanup)
+			&& !cQuit()
+			&& !Storage::Vault::OpenAtStart(cWorkingDir()))) {
 		return 1;
 	}
 	base::options::init(cWorkingDir() + "tdata/experimental_options.json");
@@ -429,6 +434,9 @@ int Launcher::exec() {
 	Platform::start();
 	ThirdParty::start();
 	auto result = executeApplication();
+	Storage::Vault::CloseAtExit(cWorkingDir(), [] {
+		return AyuSettings::getInstance().vaultKeepCaches();
+	});
 
 	DEBUG_LOG(("Telegram finished, result: %1").arg(result));
 
@@ -467,6 +475,7 @@ void Launcher::workingFolderReady() {
 
 	ComputeDebugMode();
 	ComputeExternalUpdater();
+	SetUpdaterDisabledAtStartup(); // updates come from this project's own builds, never the upstream server
 	ComputeInstallBetaVersions();
 	ComputeInstallationTag();
 }

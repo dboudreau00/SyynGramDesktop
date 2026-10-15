@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "data/data_file_click_handler.h"
 
+#include "ayu/features/zip/save_zip.h"
+
 #include "core/click_handler_types.h"
 #include "core/file_utilities.h"
 #include "core/application.h"
@@ -113,6 +115,9 @@ void DocumentSaveClickHandler::Save(
 			filedir);
 		if (!savename.isEmpty()) {
 			data->save(origin, savename);
+			if (mode == Mode::ToNewFile) {
+				Syyn::Zip::ArchiveAfterSave(data, savename);
+			}
 			if (started) {
 				started();
 			}

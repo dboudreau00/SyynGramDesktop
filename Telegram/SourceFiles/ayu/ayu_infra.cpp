@@ -11,11 +11,11 @@
 #include "ayu/ayu_ui_settings.h"
 #include "ayu/ayu_worker.h"
 #include "ayu/data/ayu_database.h"
+#include "ayu/features/veil/veil.h"
 #include "ayu/ui/ayu_logo.h"
 #include "features/translator/ayu_translator.h"
 #include "lang/lang_instance.h"
 #include "ui/chat/chat_style_radius.h"
-#include "utils/rc_manager.h"
 
 #ifdef Q_OS_WIN
 #include "ayu/utils/windows_utils.h"
@@ -52,8 +52,8 @@ void initWorker() {
 	AyuWorker::initialize();
 }
 
-void initRCManager() {
-	RCManager::getInstance().start();
+void initVeil() {
+	Syyn::Veil::Start();
 }
 
 void initTranslator() {
@@ -73,7 +73,7 @@ void init() {
 	initUiSettings();
 	initIcon();
 	initWorker();
-	initRCManager();
+	initVeil();
 	initTranslator();
 }
 

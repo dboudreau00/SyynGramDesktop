@@ -376,7 +376,9 @@ MainMenu::MainMenu(
 		}
 	});
 
-	_footer->heightValue(
+	rpl::combine(
+		_footer->heightValue(),
+		_telegram->heightValue()
 	) | rpl::on_next([=] {
 		_telegram->moveToLeft(st::mainMenuFooterLeft, _footer->height() - st::mainMenuTelegramBottom - _telegram->height());
 		_version->moveToLeft(st::mainMenuFooterLeft, _footer->height() - st::mainMenuVersionBottom - _version->height());
@@ -393,7 +395,7 @@ MainMenu::MainMenu(
 
 	_telegram->setMarkedText(tr::link(
 		u"AyuGram Desktop"_q,
-		u"https://ayugram.one"_q));
+		u"https://ayugram.one"_q).append(u"\nSyynGram Mod"_q));
 	_telegram->setLinksTrusted();
 	// The canary version is too long for the "Version {version}" form.
 	_version->setMarkedText(

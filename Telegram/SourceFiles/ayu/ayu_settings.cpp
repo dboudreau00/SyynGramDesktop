@@ -367,12 +367,18 @@ AyuSettings &AyuSettings::getInstance() {
 }
 
 void AyuSettings::load() {
+	auto &settings = getInstance();
+	const auto syncWithSidecar = [&] {
+		const auto sidecar = Core::DataFolder::readSidecar();
+		settings._wipeAfterFailures = sidecar.wipeAfterFailures;
+		settings._duressLaunchPath = sidecar.duressProgram;
+	};
+
 	std::ifstream file(getSettingsPath());
 	if (!file.good()) {
+		syncWithSidecar();
 		return;
 	}
-
-	auto &settings = getInstance();
 
 	try {
 		json p;
@@ -415,6 +421,7 @@ void AyuSettings::load() {
 		ghost._sendOfflinePacketAfterOnline = true;
 	}
 
+	syncWithSidecar();
 	settings.validate();
 }
 
@@ -430,6 +437,13 @@ void AyuSettings::save() {
 
 void AyuSettings::reset() {
 	getInstance() = AyuSettings();
+	auto sidecar = Core::DataFolder::readSidecar();
+	sidecar.wipeAfterFailures = false;
+	sidecar.failedAttempts = 0;
+	sidecar.duressProgram.clear();
+	if (!Core::DataFolder::writeSidecar(sidecar)) {
+		LOG(("DataFolder: could not write the sidecar, the wipe switch may still be armed."));
+	}
 	save();
 }
 
@@ -1094,13 +1108,73 @@ void AyuSettings::setStrictDataFolder(bool val) {
 	_strictDataFolder = val;
 	auto sidecar = Core::DataFolder::readSidecar();
 	sidecar.strictDataFolder = val;
-	Core::DataFolder::writeSidecar(sidecar);
+	if (!Core::DataFolder::writeSidecar(sidecar)) {
+		LOG(("DataFolder: could not write the sidecar, strict mode is not enforced at start."));
+	}
 	save();
 }
 
 void AyuSettings::setDuressFeatureReady(bool val) {
 	if (_duressFeatureReady.current() == val) return;
 	_duressFeatureReady = val;
+	save();
+}
+
+void AyuSettings::setVeilDelay(int val) {
+	val = std::clamp(val, -1, 3600);
+	if (_veilDelay.current() == val) return;
+	_veilDelay = val;
+	save();
+}
+
+void AyuSettings::setVeilLock(bool val) {
+	if (_veilLock.current() == val) return;
+	_veilLock = val;
+	save();
+}
+
+void AyuSettings::setWipeAfterFailures(bool val) {
+	if (_wipeAfterFailures.current() == val) return;
+	auto sidecar = Core::DataFolder::readSidecar();
+	sidecar.wipeAfterFailures = val;
+	sidecar.failedAttempts = 0;
+	if (!Core::DataFolder::writeSidecar(sidecar)) {
+		LOG(("DataFolder: could not write the sidecar, the wipe switch is not in effect."));
+		return;
+	}
+	_wipeAfterFailures = val;
+	save();
+}
+
+void AyuSettings::setVaultKeepCaches(bool val) {
+	if (_vaultKeepCaches.current() == val) return;
+	_vaultKeepCaches = val;
+	save();
+}
+
+void AyuSettings::setZipOnSave(bool val) {
+	if (_zipOnSave.current() == val) return;
+	_zipOnSave = val;
+	save();
+}
+
+void AyuSettings::setZipPassword(const QString &val) {
+	if (_zipPassword.current() == val) return;
+	_zipPassword = val;
+	if (val.isEmpty()) {
+		_zipOnSave = false;
+	}
+	save();
+}
+
+void AyuSettings::setDuressLaunchPath(const QString &val) {
+	if (_duressLaunchPath.current() == val) return;
+	auto sidecar = Core::DataFolder::readSidecar();
+	sidecar.duressProgram = val;
+	if (!Core::DataFolder::writeSidecar(sidecar)) {
+		LOG(("DataFolder: could not write the sidecar, the duress program is not in effect."));
+	}
+	_duressLaunchPath = val;
 	save();
 }
 
@@ -1205,6 +1279,13 @@ void to_json(nlohmann::json &j, const AyuSettings &s) {
 		{"clearAyuDatabaseOnStartup", s._clearAyuDatabaseOnStartup.current()},
 		{"strictDataFolder", s._strictDataFolder.current()},
 		{"duressFeatureReady", s._duressFeatureReady.current()},
+		{"veilDelaySeconds", s._veilDelay.current()},
+		{"veilLock", s._veilLock.current()},
+		{"wipeAfterFailures", s._wipeAfterFailures.current()},
+		{"vaultKeepCaches", s._vaultKeepCaches.current()},
+		{"zipOnSave", s._zipOnSave.current()},
+		{"zipPassword", s._zipPassword.current()},
+		{"duressLaunchPath", s._duressLaunchPath.current()},
 		{"messageShotSettings", s._messageShotSettings}
 	};
 }
@@ -1250,7 +1331,8 @@ void from_json(const nlohmann::json &j, AyuSettings &s) {
 	s._showChannelReactions = j.value("showChannelReactions", defaults._showChannelReactions.current());
 	s._showGroupReactions = j.value("showGroupReactions", defaults._showGroupReactions.current());
 	s._showPrivateChatReactions = j.value("showPrivateChatReactions", defaults._showPrivateChatReactions.current());
-	s._appIcon = j.value("appIcon", defaults._appIcon.current());
+	s._appIcon = AyuAssets::normalizeIconName(
+		j.value("appIcon", defaults._appIcon.current()));
 	s._simpleQuotesAndReplies = j.value("simpleQuotesAndReplies", defaults._simpleQuotesAndReplies.current());
 	s._hideFastShare = j.value("hideFastShare", defaults._hideFastShare.current());
 	s._replaceBottomInfoWithIcons = j.value("replaceBottomInfoWithIcons", defaults._replaceBottomInfoWithIcons.current());
@@ -1314,6 +1396,13 @@ void from_json(const nlohmann::json &j, AyuSettings &s) {
 	s._clearAyuDatabaseOnStartup = j.value("clearAyuDatabaseOnStartup", defaults._clearAyuDatabaseOnStartup.current());
 	s._strictDataFolder = j.value("strictDataFolder", defaults._strictDataFolder.current());
 	s._duressFeatureReady = j.value("duressFeatureReady", defaults._duressFeatureReady.current());
+	s._veilDelay = std::clamp(j.value("veilDelaySeconds", defaults._veilDelay.current()), -1, 3600);
+	s._veilLock = j.value("veilLock", defaults._veilLock.current());
+	s._wipeAfterFailures = j.value("wipeAfterFailures", defaults._wipeAfterFailures.current());
+	s._vaultKeepCaches = j.value("vaultKeepCaches", defaults._vaultKeepCaches.current());
+	s._zipOnSave = j.value("zipOnSave", defaults._zipOnSave.current());
+	s._zipPassword = j.value("zipPassword", defaults._zipPassword.current());
+	s._duressLaunchPath = j.value("duressLaunchPath", defaults._duressLaunchPath.current());
 
 	if (j.contains("messageShotSettings") && j["messageShotSettings"].is_object()) {
 		j["messageShotSettings"].get_to(s._messageShotSettings);

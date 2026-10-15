@@ -12,9 +12,12 @@ Phase 0: Syyngram sidecar workdir + strict data-folder checks (Windows-first).
 #include <QtCore/QFileInfo>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
+#include <QtCore/QSaveFile>
 #include <QtCore/QStandardPaths>
 
 #ifdef Q_OS_WIN
+#include "platform/win/veracrypt_mount_win.h"
+
 #include <windows.h>
 #endif // Q_OS_WIN
 
@@ -105,6 +108,14 @@ SidecarConfig readSidecar() {
 			}
 			config.strictDataFolder = obj.value(
 				QLatin1String("strictDataFolder")).toBool(false);
+			config.veracryptVolume = obj.value(
+				QLatin1String("veracryptVolume")).toString();
+			config.wipeAfterFailures = obj.value(
+				QLatin1String("wipeAfterFailures")).toBool(false);
+			config.failedAttempts = obj.value(
+				QLatin1String("failedAttempts")).toInt(0);
+			config.duressProgram = obj.value(
+				QLatin1String("duressProgram")).toString();
 		}
 	}
 
@@ -127,13 +138,22 @@ bool writeSidecar(const SidecarConfig &config) {
 		obj.insert(QLatin1String("workdir"), normalizeDir(config.workDir));
 	}
 	obj.insert(QLatin1String("strictDataFolder"), config.strictDataFolder);
-	QFile file(configSidecarPath());
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+	if (!config.veracryptVolume.isEmpty()) {
+		obj.insert(QLatin1String("veracryptVolume"), config.veracryptVolume);
+	}
+	if (config.wipeAfterFailures) {
+		obj.insert(QLatin1String("wipeAfterFailures"), true);
+		obj.insert(QLatin1String("failedAttempts"), config.failedAttempts);
+	}
+	if (!config.duressProgram.isEmpty()) {
+		obj.insert(QLatin1String("duressProgram"), config.duressProgram);
+	}
+	QSaveFile file(configSidecarPath());
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		return false;
 	}
 	file.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
-	file.close();
-	return ok;
+	return file.commit() && ok;
 }
 
 bool isPathAvailable(const QString &path) {
@@ -178,7 +198,9 @@ ResolveStatus applySidecarWorkDir(bool hasCliWorkDir) {
 		return ResolveStatus::UseDefault;
 	}
 
-	if (isDataFolderRootAvailable(sidecar.workDir)) {
+	// A different volume can take over a drive letter: strict also needs the folder itself.
+	if (isDataFolderRootAvailable(sidecar.workDir)
+		&& (!sidecar.strictDataFolder || QDir(sidecar.workDir).exists())) {
 		cForceWorkingDir(sidecar.workDir);
 		LOG(("DataFolder: applied Syyngram sidecar workdir: %1"
 			).arg(cWorkingDir()));
@@ -195,6 +217,41 @@ ResolveStatus applySidecarWorkDir(bool hasCliWorkDir) {
 	LOG(("DataFolder: sidecar workdir unavailable, strict off, keeping default: %1"
 		).arg(sidecar.workDir));
 	return ResolveStatus::SidecarUnavailable;
+}
+
+bool tryAutoMount() {
+#ifdef Q_OS_WIN
+	constexpr auto kWaitSeconds = 180;
+	const auto sidecar = readSidecar();
+	if (sidecar.workDir.isEmpty() || sidecar.veracryptVolume.isEmpty()) {
+		return false;
+	}
+	const auto native = QDir::toNativeSeparators(sidecar.workDir);
+	if (native.size() < 2
+		|| native.at(1) != QLatin1Char(':')
+		|| native.at(0).toUpper() < QLatin1Char('A')
+		|| native.at(0).toUpper() > QLatin1Char('Z')) {
+		return false;
+	}
+	const auto drive = native.left(1).toUpper();
+	const auto mount = Platform::VeraCrypt::mountVolume({
+		.volumePath = sidecar.veracryptVolume,
+		.driveLetter = drive,
+	});
+	LOG(("DataFolder: auto-mount: %1").arg(mount.message));
+	if (!mount.ok) {
+		return false;
+	}
+	for (auto i = 0; i != kWaitSeconds; ++i) {
+		if (isDataFolderRootAvailable(sidecar.workDir)) {
+			return true;
+		}
+		Sleep(1000);
+	}
+	return false;
+#else // Q_OS_WIN
+	return false;
+#endif // !Q_OS_WIN
 }
 
 bool promptStrictUnavailable(const QString &workDir) {

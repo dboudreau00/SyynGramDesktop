@@ -85,6 +85,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/power_saving.h"
 #include "ui/screen_reader_mode.h"
 #include "storage/storage_domain.h"
+#include "storage/storage_duress.h"
 #include "storage/storage_databases.h"
 #include "storage/storage_folder_archive.h"
 #include "storage/localstorage.h"
@@ -1361,6 +1362,7 @@ void Application::maybeLockByPasscode() {
 }
 
 void Application::unlockPasscode() {
+	Storage::Duress::ResetWrongPasswords();
 	clearPasscodeLock();
 	enumerateWindows([&](not_null<Window::Controller*> w) {
 		w->clearPasscodeLock();

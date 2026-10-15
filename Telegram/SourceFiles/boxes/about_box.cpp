@@ -60,6 +60,13 @@ void AboutBox(not_null<Ui::GenericBox*> box, Window::SessionController* controll
 
 	auto layout = box->verticalLayout();
 
+	layout->add(
+		object_ptr<Ui::FlatLabel>(
+			box,
+			rpl::single(u"SyynGram Mod"_q),
+			st::aboutLabel),
+		st::boxRowPadding);
+
 	const auto version = layout->add(
 		object_ptr<Ui::LinkButton>(
 			box,

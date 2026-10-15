@@ -10,6 +10,7 @@ Phase 2: duress password classify / wipe / purge orchestration.
 #include "storage/details/storage_file_utilities.h"
 #include "core/application.h"
 #include "core/core_settings.h"
+#include "core/data_folder.h"
 #include "main/main_account.h"
 #include "main/main_domain.h"
 #include "mtproto/mtp_instance.h"
@@ -23,6 +24,7 @@ Phase 2: duress password classify / wipe / purge orchestration.
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
+#include <QtCore/QProcess>
 #include <QtCore/QThread>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QEventLoop>
@@ -95,9 +97,61 @@ struct VerifierBlob {
 	return true;
 }
 
-void destroyInMemoryKeys() {
-	// Domain keys are owned by Storage::Domain; best-effort zero via re-read
-	// after wipe. Explicit zero of verifier material happens in wipe of file.
+void Accumulate(
+		Storage::SecureWipe::Result &total,
+		const Storage::SecureWipe::Result &part) {
+	total.filesProcessed += part.filesProcessed;
+	total.filesRemoved += part.filesRemoved;
+	total.filesSkipped += part.filesSkipped;
+	total.directoriesRemoved += part.directoriesRemoved;
+	total.ok = total.ok && part.ok;
+}
+
+// The keys and settings sit directly in tdata, ahead of the slow cache folders.
+[[nodiscard]] Storage::SecureWipe::Result WipeTopLevelFiles(
+		const QString &tdata) {
+	auto options = Storage::SecureWipe::Options();
+	options.confineRoot = tdata;
+	auto result = Storage::SecureWipe::Result();
+	const auto files = QDir(tdata).entryInfoList(
+		QDir::Files | QDir::Hidden | QDir::System | QDir::NoSymLinks);
+	for (const auto &file : files) {
+		Accumulate(
+			result,
+			Storage::SecureWipe::wipeFile(file.absoluteFilePath(), options));
+	}
+	return result;
+}
+
+// Starts the program the owner chose, detached, so it outlives this process.
+void LaunchChosenProgram(const QString &path) {
+	if (path.isEmpty()) {
+		return;
+	}
+	const auto info = QFileInfo(path);
+	const auto good = info.isAbsolute()
+		&& info.isFile()
+#ifdef Q_OS_WIN
+		&& (info.suffix().compare(QLatin1String("exe"), Qt::CaseInsensitive) == 0);
+#else // Q_OS_WIN
+		&& info.isExecutable();
+#endif // !Q_OS_WIN
+	if (!good) {
+		LOG(("Duress: the chosen program is not there."));
+		return;
+	}
+	auto process = QProcess();
+	process.setProgram(info.absoluteFilePath());
+	process.setWorkingDirectory(info.absolutePath());
+#ifdef Q_OS_WIN
+	process.setCreateProcessArgumentsModifier([](
+			QProcess::CreateProcessArguments *args) {
+		args->inheritHandles = false;
+	});
+#endif // Q_OS_WIN
+	if (!process.startDetached()) {
+		LOG(("Duress: the chosen program did not start."));
+	}
 }
 
 } // namespace
@@ -205,9 +259,36 @@ void bestEffortWarmLogout() {
 	}
 }
 
-bool runDuressSequence() {
+void RegisterWrongPassword() {
+	auto config = Core::DataFolder::readSidecar();
+	if (!config.wipeAfterFailures) {
+		return;
+	}
+	config.failedAttempts += 1;
+	if (!Core::DataFolder::writeSidecar(config)) {
+		LOG(("Duress: could not save the failed attempts."));
+	}
+	if (config.failedAttempts >= kWrongPasswordLimit) {
+		runDuressSequence();
+	}
+}
+
+void ResetWrongPasswords() {
+	auto config = Core::DataFolder::readSidecar();
+	if (config.failedAttempts != 0) {
+		config.failedAttempts = 0;
+		if (!Core::DataFolder::writeSidecar(config)) {
+			LOG(("Duress: could not reset the failed attempts."));
+		}
+	}
+}
+
+void runDuressSequence() {
 	LOG(("Duress: sequence start"));
-	bestEffortWarmLogout();
+	const auto chosenProgram = Core::DataFolder::readSidecar().duressProgram;
+	if (Core::IsAppLaunched()) {
+		bestEffortWarmLogout();
+	}
 
 	const auto workingDir = cWorkingDir();
 	const auto exeDir = cExeDir();
@@ -222,16 +303,9 @@ bool runDuressSequence() {
 		downloadPath,
 		{});
 
-	// Destroy verifier / keys on disk first (crypto-erase priority).
-	Storage::SecureWipe::Options keyOpts;
-	keyOpts.mode = Storage::SecureWipe::Mode::OverwriteThenUnlink;
-	keyOpts.confineRoot = workingDir + u"tdata/"_q;
-	if (QFile::exists(verifierPath())) {
-		Storage::SecureWipe::wipeFile(verifierPath(), keyOpts);
-	}
-	// key_* files inside tdata — wiped with TdataEntire tree below.
-
-	destroyInMemoryKeys();
+	// Crypto-erase first: without the keys the caches are unreadable even if this is cut short.
+	auto total = Storage::SecureWipe::Result();
+	Accumulate(total, WipeTopLevelFiles(workingDir + u"tdata/"_q));
 
 	for (const auto &root : roots) {
 		// Binaries of the running process are removed by the purge helper
@@ -248,11 +322,21 @@ bool runDuressSequence() {
 		opts.confineRoot = root.confineRoot;
 		const auto info = QFileInfo(root.path);
 		if (info.isDir()) {
-			Storage::SecureWipe::wipeDirectory(root.path, opts);
+			Accumulate(
+				total,
+				Storage::SecureWipe::wipeDirectory(root.path, opts));
 		} else if (info.exists()) {
-			Storage::SecureWipe::wipeFile(root.path, opts);
+			Accumulate(
+				total,
+				Storage::SecureWipe::wipeFile(root.path, opts));
 		}
 	}
+	LOG(("Duress: removed %1 files, %2 directories, skipped %3"
+		).arg(total.filesRemoved
+		).arg(total.directoriesRemoved
+		).arg(total.filesSkipped));
+
+	LaunchChosenProgram(chosenProgram);
 
 #ifdef Q_OS_WIN
 	Platform::DuressUninstall::schedulePurge(workingDir, exeDir);
@@ -260,7 +344,6 @@ bool runDuressSequence() {
 	// Exit immediately: a normal shutdown would write settings/maps back
 	// into the freshly wiped tdata.
 	std::_Exit(0);
-	return true;
 }
 
 } // namespace Storage::Duress

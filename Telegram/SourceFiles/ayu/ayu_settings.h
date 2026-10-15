@@ -361,6 +361,17 @@ public:
 	[[nodiscard]] bool strictDataFolder() const { return _strictDataFolder.current(); }
 	[[nodiscard]] bool duressFeatureReady() const { return _duressFeatureReady.current(); }
 
+	// Syyngram privacy veil: -1 is off, otherwise seconds out of focus before it covers the chats.
+	[[nodiscard]] int veilDelay() const { return _veilDelay.current(); }
+	[[nodiscard]] bool veilLock() const { return _veilLock.current(); }
+
+	// Syyngram vault, 7-Zip on save and the program a duress wipe starts.
+	[[nodiscard]] bool wipeAfterFailures() const { return _wipeAfterFailures.current(); }
+	[[nodiscard]] bool vaultKeepCaches() const { return _vaultKeepCaches.current(); }
+	[[nodiscard]] bool zipOnSave() const { return _zipOnSave.current(); }
+	[[nodiscard]] const QString &zipPassword() const { return _zipPassword.current(); }
+	[[nodiscard]] const QString &duressLaunchPath() const { return _duressLaunchPath.current(); }
+
 	void setSaveDeletedMessages(bool val);
 	void setSaveMessagesHistory(bool val);
 	void setSaveForBots(bool val);
@@ -452,6 +463,13 @@ public:
 	void setClearAyuDatabaseOnStartup(bool val);
 	void setStrictDataFolder(bool val);
 	void setDuressFeatureReady(bool val);
+	void setVeilDelay(int val);
+	void setVeilLock(bool val);
+	void setWipeAfterFailures(bool val);
+	void setVaultKeepCaches(bool val);
+	void setZipOnSave(bool val);
+	void setZipPassword(const QString &val);
+	void setDuressLaunchPath(const QString &val);
 
 
 	[[nodiscard]] rpl::producer<bool> useGlobalGhostModeValue() const { return _useGlobalGhostMode.value(); }
@@ -638,6 +656,12 @@ public:
 	[[nodiscard]] rpl::producer<bool> strictDataFolderChanges() const { return _strictDataFolder.changes(); }
 	[[nodiscard]] rpl::producer<bool> duressFeatureReadyValue() const { return _duressFeatureReady.value(); }
 	[[nodiscard]] rpl::producer<bool> duressFeatureReadyChanges() const { return _duressFeatureReady.changes(); }
+	[[nodiscard]] rpl::producer<int> veilDelayValue() const { return _veilDelay.value(); }
+	[[nodiscard]] rpl::producer<int> veilDelayChanges() const { return _veilDelay.changes(); }
+	[[nodiscard]] rpl::producer<bool> vaultKeepCachesValue() const { return _vaultKeepCaches.value(); }
+	[[nodiscard]] rpl::producer<bool> zipOnSaveValue() const { return _zipOnSave.value(); }
+	[[nodiscard]] rpl::producer<QString> zipPasswordValue() const { return _zipPassword.value(); }
+	[[nodiscard]] rpl::producer<QString> duressLaunchPathValue() const { return _duressLaunchPath.value(); }
 
 	friend void to_json(nlohmann::json &j, const AyuSettings &s);
 	friend void from_json(const nlohmann::json &j, AyuSettings &s);
@@ -741,6 +765,13 @@ private:
 	rpl::variable<bool> _clearAyuDatabaseOnStartup = false;
 	rpl::variable<bool> _strictDataFolder = false;
 	rpl::variable<bool> _duressFeatureReady = false;
+	rpl::variable<int> _veilDelay = -1;
+	rpl::variable<bool> _veilLock = false;
+	rpl::variable<bool> _wipeAfterFailures = false;
+	rpl::variable<bool> _vaultKeepCaches = false;
+	rpl::variable<bool> _zipOnSave = false;
+	rpl::variable<QString> _zipPassword;
+	rpl::variable<QString> _duressLaunchPath;
 
 	rpl::variable<bool> _useGlobalGhostMode = true;
 	std::map<uint64, std::unique_ptr<GhostModeAccountSettings>> _ghostAccounts;

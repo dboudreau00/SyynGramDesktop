@@ -77,6 +77,16 @@ void BuildVersionInfo(SectionBuilder &builder) {
 		};
 	});
 
+	builder.add([](const WidgetContext &ctx) -> SectionBuilder::WidgetToAdd {
+		return {
+			.widget = object_ptr<Ui::FlatLabel>(
+				ctx.container,
+				rpl::single(QString("SyynGram Mod")),
+				st::centeredBoxLabel),
+			.align = style::al_top,
+		};
+	});
+
 	builder.addSkip();
 
 	builder.add([](const WidgetContext &ctx) -> SectionBuilder::WidgetToAdd {
