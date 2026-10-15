@@ -14,5 +14,8 @@ Phase 4 adds an optional in-app VeraCrypt mount helper.
 ## Optional: Mount from the app (Phase 4)
 
 Preferences → Storage → **Mount VeraCrypt volume** looks for `VeraCrypt.exe`
-and launches a quiet mount (`/v /l /q /s`). The password is entered in
-VeraCrypt's own prompt (never passed on the command line).
+and launches a quiet mount (`/v /l /q`). The password is entered in
+VeraCrypt's own prompt (never passed on the command line; `/s` is not used
+because it would suppress that prompt).
+The mount drive letter is taken from the configured **Data folder**
+(for example `E:` when the folder is `E:\Syyngram`), not a hardcoded `V:`.

@@ -22,8 +22,8 @@ struct MountResult {
 	QString message;
 };
 
-// Launch VeraCrypt.exe /v /l /q /s and let VeraCrypt prompt for the password
-// (no /p — avoids password on the command line).
+// Launch VeraCrypt.exe /v /l /q and let VeraCrypt prompt for the password
+// (no /p — avoids password on the command line; no /s — would hide that prompt).
 [[nodiscard]] MountResult mountVolume(const MountRequest &request);
 
 } // namespace Platform::VeraCrypt

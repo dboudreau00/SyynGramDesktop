@@ -221,7 +221,9 @@ ResolveStatus applySidecarWorkDir(bool hasCliWorkDir) {
 
 bool tryAutoMount() {
 #ifdef Q_OS_WIN
-	constexpr auto kWaitSeconds = 180;
+	// Cap wait so a cancelled VeraCrypt password cannot stall log init for minutes.
+	constexpr auto kWaitMs = 20000;
+	constexpr auto kPollMs = 500;
 	const auto sidecar = readSidecar();
 	if (sidecar.workDir.isEmpty() || sidecar.veracryptVolume.isEmpty()) {
 		return false;
@@ -242,11 +244,11 @@ bool tryAutoMount() {
 	if (!mount.ok) {
 		return false;
 	}
-	for (auto i = 0; i != kWaitSeconds; ++i) {
+	for (auto waited = 0; waited < kWaitMs; waited += kPollMs) {
 		if (isDataFolderRootAvailable(sidecar.workDir)) {
 			return true;
 		}
-		Sleep(1000);
+		Sleep(kPollMs);
 	}
 	return false;
 #else // Q_OS_WIN

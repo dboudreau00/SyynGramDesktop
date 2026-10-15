@@ -384,9 +384,20 @@ void BuildQoLToggles(SectionBuilder &builder, AyuSectionBuilder &ayu) {
 					if (!Core::DataFolder::writeSidecar(cfg)) {
 						controller->showToast(QString("Could not remember the volume."));
 					}
+					const auto native = QDir::toNativeSeparators(
+						cfg.workDir.isEmpty() ? cWorkingDir() : cfg.workDir);
+					if (native.size() < 2
+						|| native.at(1) != QLatin1Char(':')
+						|| native.at(0).toUpper() < QLatin1Char('A')
+						|| native.at(0).toUpper() > QLatin1Char('Z')) {
+						controller->showToast(
+							QString("Set a data folder with a drive letter first."));
+						return;
+					}
+					const auto drive = native.left(1).toUpper();
 					const auto mount = Platform::VeraCrypt::mountVolume({
 						.volumePath = result.paths.front(),
-						.driveLetter = QStringLiteral("V"),
+						.driveLetter = drive,
 						.veracryptExe = exe,
 					});
 					controller->showToast(mount.message);
