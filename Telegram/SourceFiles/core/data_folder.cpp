@@ -112,8 +112,7 @@ SidecarConfig readSidecar() {
 				QLatin1String("veracryptVolume")).toString();
 			config.wipeAfterFailures = obj.value(
 				QLatin1String("wipeAfterFailures")).toBool(false);
-			config.failedAttempts = obj.value(
-				QLatin1String("failedAttempts")).toInt(0);
+			// failedAttempts deliberately omitted: stored under tdata/, not AppData.
 			config.duressProgram = obj.value(
 				QLatin1String("duressProgram")).toString();
 		}
@@ -143,7 +142,7 @@ bool writeSidecar(const SidecarConfig &config) {
 	}
 	if (config.wipeAfterFailures) {
 		obj.insert(QLatin1String("wipeAfterFailures"), true);
-		obj.insert(QLatin1String("failedAttempts"), config.failedAttempts);
+		// Do not persist failedAttempts here — see Storage::Duress tdata counter.
 	}
 	if (!config.duressProgram.isEmpty()) {
 		obj.insert(QLatin1String("duressProgram"), config.duressProgram);

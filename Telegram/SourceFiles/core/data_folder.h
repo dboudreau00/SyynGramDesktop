@@ -20,7 +20,7 @@ struct SidecarConfig {
 	bool strictDataFolder = false;
 	QString veracryptVolume;  // the volume file to mount at start when the data folder is missing
 	bool wipeAfterFailures = false; // a run of wrong passwords starts the duress wipe
-	int failedAttempts = 0;
+	// Counter is stored under tdata/syyngram_fa, not this AppData sidecar.
 	QString duressProgram;    // started after a duress wipe
 };
 

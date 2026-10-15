@@ -7,6 +7,7 @@
 #include "ayu/ayu_settings.h"
 
 #include "core/data_folder.h"
+#include "storage/storage_duress.h"
 
 #include "lang_auto.h"
 #include "tray.h"
@@ -439,11 +440,11 @@ void AyuSettings::reset() {
 	getInstance() = AyuSettings();
 	auto sidecar = Core::DataFolder::readSidecar();
 	sidecar.wipeAfterFailures = false;
-	sidecar.failedAttempts = 0;
 	sidecar.duressProgram.clear();
 	if (!Core::DataFolder::writeSidecar(sidecar)) {
 		LOG(("DataFolder: could not write the sidecar, the wipe switch may still be armed."));
 	}
+	Storage::Duress::ResetWrongPasswords();
 	save();
 }
 
@@ -1137,11 +1138,11 @@ void AyuSettings::setWipeAfterFailures(bool val) {
 	if (_wipeAfterFailures.current() == val) return;
 	auto sidecar = Core::DataFolder::readSidecar();
 	sidecar.wipeAfterFailures = val;
-	sidecar.failedAttempts = 0;
 	if (!Core::DataFolder::writeSidecar(sidecar)) {
 		LOG(("DataFolder: could not write the sidecar, the wipe switch is not in effect."));
 		return;
 	}
+	Storage::Duress::ResetWrongPasswords();
 	_wipeAfterFailures = val;
 	save();
 }

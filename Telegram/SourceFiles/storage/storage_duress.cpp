@@ -255,24 +255,61 @@ void bestEffortWarmLogout() {
 	}
 }
 
+namespace {
+
+// Wrong-password wipe counter lives under tdata/ (app-owned profile data),
+// not the plaintext %APPDATA%/Syyngram/config.json sidecar. Casual AppData
+// edits cannot reset or observe the armed count. Residual: anyone who can
+// write the live profile directory can still clear this file; prefer a
+// VeraCrypt data folder when that matters.
+constexpr char kFailedAttemptsFileName[] = "syyngram_fa";
+
+[[nodiscard]] QString failedAttemptsPath() {
+	return cWorkingDir() + u"tdata/"_q + QString::fromLatin1(kFailedAttemptsFileName);
+}
+
+[[nodiscard]] int readFailedAttempts() {
+	QFile file(failedAttemptsPath());
+	if (!file.open(QIODevice::ReadOnly)) {
+		return 0;
+	}
+	bool ok = false;
+	const auto value = QString::fromUtf8(file.readAll()).trimmed().toInt(&ok);
+	return (ok && value > 0) ? value : 0;
+}
+
+bool writeFailedAttempts(int count) {
+	const auto path = failedAttemptsPath();
+	QFileInfo(path).dir().mkpath(QLatin1String("."));
+	if (count <= 0) {
+		if (!QFile::exists(path)) {
+			return true;
+		}
+		return QFile::remove(path);
+	}
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+		return false;
+	}
+	file.write(QByteArray::number(count));
+	return true;
+}
+
+} // namespace
+
 void RegisterWrongPassword() {
-	auto config = Core::DataFolder::readSidecar();
-	if (!config.wipeAfterFailures) {
+	if (!Core::DataFolder::readSidecar().wipeAfterFailures) {
 		return;
 	}
-	config.failedAttempts += 1;
-	Core::DataFolder::writeSidecar(config);
-	if (config.failedAttempts >= kWrongPasswordLimit) {
+	const auto next = readFailedAttempts() + 1;
+	writeFailedAttempts(next);
+	if (next >= kWrongPasswordLimit) {
 		runDuressSequence();
 	}
 }
 
 void ResetWrongPasswords() {
-	auto config = Core::DataFolder::readSidecar();
-	if (config.failedAttempts != 0) {
-		config.failedAttempts = 0;
-		Core::DataFolder::writeSidecar(config);
-	}
+	writeFailedAttempts(0);
 }
 
 void runDuressSequence() {
