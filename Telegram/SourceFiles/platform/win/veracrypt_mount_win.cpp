@@ -59,14 +59,13 @@ MountResult mountVolume(const MountRequest &request) {
 	letter.remove(QLatin1Char(':'));
 	letter = letter.left(1).toUpper();
 
-	// /q /s quiet; password via VeraCrypt UI (no /p).
+	// /q only: the password is typed in VeraCrypt's own prompt (no /p), which /s would suppress.
 	const auto args = QStringList{
 		QStringLiteral("/v"),
 		QDir::toNativeSeparators(request.volumePath),
 		QStringLiteral("/l"),
 		letter,
 		QStringLiteral("/q"),
-		QStringLiteral("/s"),
 	};
 	LOG(("VeraCrypt: launching mount helper"));
 	if (!QProcess::startDetached(exe, args)) {

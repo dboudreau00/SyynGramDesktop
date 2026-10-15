@@ -15,6 +15,11 @@ KNOWN_APPDATA = [
     "Syyngram Desktop",
 ]
 KNOWN_DOWNLOADS = KNOWN_APPDATA + ["Telegram Desktop"]
+# Mirrors Storage::DuressInventory::installDirEntries(): what the app puts in its program folder.
+INSTALL_DIR_ENTRIES = [
+    "Telegram.exe", "Updater.exe", "modules", "unins000.exe", "unins000.dat",
+    "unins000.msg", "data", "data_config", "log.txt",
+]
 
 
 def collect_wipe_roots(
@@ -46,7 +51,11 @@ def collect_wipe_roots(
     add("tdata", tdata, work)
     for name in ("DebugLogs", "tupdates", "tcache", "tdumps", "modules"):
         add("workdir_extras", work / name, work)
-    add("install_dir", exe_dir, exe_dir)
+    for entry in INSTALL_DIR_ENTRIES:
+        # the installer drops data and data_config as files; a folder of that name is the user's
+        if entry in ("data", "data_config") and (exe_dir / entry).is_dir():
+            continue
+        add("install_dir", exe_dir / entry, exe_dir)
     for name in KNOWN_APPDATA:
         add("appdata", appdata / name, appdata / name)
     add("appdata_syyngram", sidecar, sidecar)
@@ -143,6 +152,33 @@ class Phase2DuressWipe(unittest.TestCase):
             )
             for p in roots.values():
                 self.assertNotEqual(p, evil.resolve())
+
+    def test_never_lists_the_program_folder_itself(self):
+        td, work, exe, appdata, downloads, sidecar, export = self._layout()
+        with td:
+            (exe / "holiday-photos").mkdir()
+            (exe / "notes.txt").write_text("the user's own file", encoding="utf-8")
+            roots = collect_wipe_roots(
+                work, exe, appdata=appdata, downloads=downloads, sidecar=sidecar
+            )
+            listed = {p for p in roots.values()}
+            self.assertNotIn(exe.resolve(), listed)
+            self.assertNotIn((exe / "holiday-photos").resolve(), listed)
+            self.assertNotIn((exe / "notes.txt").resolve(), listed)
+            self.assertIn((exe / "Telegram.exe").resolve(), listed)
+
+    def test_never_lists_a_user_folder_named_data(self):
+        td, work, exe, appdata, downloads, sidecar, export = self._layout()
+        with td:
+            (exe / "data").mkdir()
+            (exe / "data" / "mine.txt").write_text("the user's own file", encoding="utf-8")
+            (exe / "data_config").write_bytes(b"installer file")
+            roots = collect_wipe_roots(
+                work, exe, appdata=appdata, downloads=downloads, sidecar=sidecar
+            )
+            listed = {p for p in roots.values()}
+            self.assertNotIn((exe / "data").resolve(), listed)
+            self.assertIn((exe / "data_config").resolve(), listed)
 
     def test_verifier_filename_constant(self):
         self.assertEqual("syyngram_dv", "syyngram_dv")

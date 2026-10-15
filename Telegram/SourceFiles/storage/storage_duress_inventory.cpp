@@ -6,6 +6,7 @@ Phase 2: confined wipe-root inventory for duress.
 
 #include "core/data_folder.h"
 #include "core/version.h"
+#include "settings.h"
 
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
@@ -114,6 +115,20 @@ void addRoot(
 
 } // namespace
 
+QStringList installDirEntries() {
+	return {
+		cExeName(),
+		QStringLiteral("Updater.exe"),
+		QStringLiteral("modules"),
+		QStringLiteral("unins000.exe"),
+		QStringLiteral("unins000.dat"),
+		QStringLiteral("unins000.msg"),
+		QStringLiteral("data"),
+		QStringLiteral("data_config"),
+		QStringLiteral("log.txt"),
+	};
+}
+
 QStringList knownAppDataFolderNames() {
 	return {
 		QStringLiteral("AyuGram Desktop"),
@@ -172,18 +187,34 @@ std::vector<Root> collectWipeRoots(
 		QStringLiteral("tcache"),
 		QStringLiteral("tdumps"),
 		QStringLiteral("modules"),
+		QStringLiteral("log.txt"),
 	}) {
 		addRoot(out, Category::WorkingDirExtras, work + name, work);
 	}
 
-	// 3) Install / portable exe dir (if distinct from workdir)
-	if (!exe.isEmpty()
-		&& QDir::cleanPath(exe) != QDir::cleanPath(work)) {
-		addRoot(out, Category::InstallDir, exe, exe, true);
-	} else if (!exe.isEmpty()) {
-		// Portable: workdir == exe dir; tdata already covered. Still list exe
-		// for uninstall helper (binaries) via InstallDir with same confine.
-		addRoot(out, Category::InstallDir, exe, exe, true);
+	// The early log is written next to the program until the profile folder is known.
+	for (const auto &[folder, category] : {
+		std::pair(work, Category::WorkingDirExtras),
+		std::pair(exe, Category::InstallDir),
+	}) {
+		const auto logs = QDir(folder).entryList(
+			{ QStringLiteral("log_start*.txt") },
+			QDir::Files);
+		for (const auto &name : logs) {
+			addRoot(out, category, folder + name, folder);
+		}
+	}
+
+	// 3) The program folder may be shared with the user's files: list only what the app put there.
+	if (!exe.isEmpty()) {
+		for (const auto &name : installDirEntries()) {
+			const auto isDataFile = (name == QLatin1String("data"))
+				|| (name == QLatin1String("data_config"));
+			if (isDataFile && QFileInfo(exe + name).isDir()) {
+				continue;
+			}
+			addRoot(out, Category::InstallDir, exe + name, exe, true);
+		}
 	}
 
 	// 4) AppData AyuGram / Syyngram folders

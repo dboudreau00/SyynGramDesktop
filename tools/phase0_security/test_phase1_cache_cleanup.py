@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
+
+
+LOGIN = re.compile(r"^(key_.*|settings.*|map|[0-9A-Fa-f]{16}[s01]?)$")
 
 
 def collect_targets(working_dir: Path, *, clear_cache=True, clear_emoji=False, clear_ayu_db=False):
@@ -17,6 +21,8 @@ def collect_targets(working_dir: Path, *, clear_cache=True, clear_emoji=False, c
     targets: list[Path] = []
 
     def add(p: Path):
+        if LOGIN.match(p.name):
+            return
         if p.exists():
             targets.append(p.resolve())
 
@@ -118,6 +124,15 @@ class Phase1CacheCleanup(unittest.TestCase):
         with td:
             obj = json.loads((tdata / "ayu_settings.json").read_text(encoding="utf-8"))
             self.assertTrue(obj.get("clearCacheOnStartup", False))
+
+    def test_never_selects_the_login(self):
+        td, root, tdata = self._fixture()
+        with td:
+            for name in ("key_datas", "D877F783D5D3EF8C", "D877F783D5D3EF8Cs", "settingss", "map"):
+                (tdata / name).write_bytes(b"x")
+            targets = collect_targets(root, clear_cache=True, clear_emoji=True, clear_ayu_db=True)
+            for t in targets:
+                self.assertFalse(LOGIN.match(t.name), t)
 
     def test_missing_tdata_noop(self):
         with tempfile.TemporaryDirectory() as raw:

@@ -3,7 +3,7 @@
 #define MyAppPublisher "Radolyn Labs"
 #define MyAppURL "https://github.com/AyuGram"
 #define MyAppExeName "AyuGram.exe"
-#define MyAppId "53F49750-6209-4FBF-9CA8-7A333C87D666"
+#define MyAppId "8E3B7C1A-5D2F-4B6E-9A41-7C0F2D8E5A63"
 #define CurrentYear GetDateTimeString('yyyy','','')
 
 [Setup]

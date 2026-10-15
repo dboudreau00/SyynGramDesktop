@@ -45,6 +45,10 @@ struct Root {
 
 [[nodiscard]] QString categoryName(Category category);
 
+// What the app itself puts in its program folder (the binaries and the
+// leftovers the installer's uninstaller would also remove).
+[[nodiscard]] QStringList installDirEntries();
+
 // Known safe AppData / Downloads folder names (AyuGram + Syyngram).
 [[nodiscard]] QStringList knownAppDataFolderNames();
 [[nodiscard]] QStringList knownDownloadFolderNames();

@@ -8,6 +8,7 @@ Phase 1: startup cache removal via SecureWipe::UnlinkOnly.
 
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
+#include <QtCore/QRegularExpression>
 
 namespace Ayu::CacheCleanup {
 namespace {
@@ -24,8 +25,19 @@ namespace {
 	return normalizeWorkingDir(workingDir) + QStringLiteral("tdata/");
 }
 
+// The login lives in key_* and the 16-hex account files (with an s or 0/1 suffix), plus settings and maps.
+[[nodiscard]] bool isLoginFile(const QString &path) {
+	const auto name = QFileInfo(path).fileName();
+	static const auto account = QRegularExpression(
+		QStringLiteral("^[0-9A-Fa-f]{16}[s01]?$"));
+	return name.startsWith(QLatin1String("key_"))
+		|| name.startsWith(QLatin1String("settings"))
+		|| name == QLatin1String("map")
+		|| account.match(name).hasMatch();
+}
+
 void appendIfExists(QStringList &out, const QString &path) {
-	if (path.isEmpty()) {
+	if (path.isEmpty() || isLoginFile(path)) {
 		return;
 	}
 	if (QFileInfo::exists(path)) {
