@@ -12,11 +12,29 @@
 
 #include <QSvgRenderer>
 
+#include <algorithm>
+
 static QString LAST_LOADED_NAME;
 static QImage LAST_LOADED;
 static QImage LAST_LOADED_PAD;
 
 namespace AyuAssets {
+
+QString normalizeIconName(const QString &name) {
+	const auto known = {
+		DEFAULT_ICON,
+		VELLUM_ICON,
+		GILT_ICON,
+		OBSIDIAN_ICON,
+		SIGNAL_ICON,
+		WARD_ICON,
+		CIRCUIT_ICON,
+		ECLIPSE_ICON,
+	};
+	return std::find(known.begin(), known.end(), name) != known.end()
+		? name
+		: DEFAULT_ICON;
+}
 
 QString appIcoPath() {
 	const auto &settings = AyuSettings::getInstance();

@@ -166,7 +166,7 @@ using ProxyData = MTP::ProxyData;
 }
 
 [[nodiscard]] QColor ProxyQrActiveColor() {
-	return QColor(0x40, 0xA7, 0xE3);
+	return QColor(0xC9, 0xA2, 0x4A);
 }
 
 [[nodiscard]] QImage ProxyQr(const Qr::Data &data, int pixel, int max = 0) {

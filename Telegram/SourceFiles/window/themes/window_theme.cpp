@@ -54,7 +54,12 @@ namespace {
 constexpr auto kThemeFileSizeLimit = 5 * 1024 * 1024;
 constexpr auto kBackgroundSizeLimit = 25 * 1024 * 1024;
 constexpr auto kNightThemeFile = ":/gui/night.tdesktop-theme"_cs;
+constexpr auto kDayThemeFile = ":/gui/day-blue.tdesktop-theme"_cs;
 constexpr auto kDarkValueThreshold = 0.5;
+
+[[nodiscard]] QString DayThemePath() {
+	return kDayThemeFile.utf16();
+}
 
 struct Applying {
 	Saved data;
@@ -1148,8 +1153,8 @@ bool ChatBackground::isNonDefaultThemeOrBackground() {
 	return nightMode()
 		? (_themeObject.pathAbsolute != NightThemePath()
 			|| !Data::IsThemeWallPaper(_paper))
-		: (!_themeObject.pathAbsolute.isEmpty()
-			|| !Data::IsDefaultWallPaper(_paper));
+		: (_themeObject.pathAbsolute != DayThemePath()
+			|| !Data::IsThemeWallPaper(_paper));
 }
 
 bool ChatBackground::isNonDefaultBackground() {
@@ -1242,7 +1247,7 @@ void ChatBackground::reapplyWithNightMode(
 	if (!alreadyOnDisk) {
 		path = themePath
 			? *themePath
-			: (newNightMode ? NightThemePath() : QString());
+			: (newNightMode ? NightThemePath() : DayThemePath());
 		ApplyDefaultWithPath(path);
 	}
 
@@ -1474,7 +1479,7 @@ void ToggleNightModeWithConfirmation(
 
 void ResetToSomeDefault() {
 	Background()->reapplyWithNightMode(
-		IsNightMode() ? NightThemePath() : QString(),
+		IsNightMode() ? NightThemePath() : DayThemePath(),
 		IsNightMode());
 }
 

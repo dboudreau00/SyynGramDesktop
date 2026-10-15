@@ -29,6 +29,22 @@ stickerRoundingSize: 5px;
 
 messageShotPadding: 4px;
 
+syynSecurityPadding: margins(22px, 14px, 22px, 8px);
+syynSecurityIconSize: 72px;
+syynSecuritySkip: 14px;
+syynSecurityBarSkip: 8px;
+syynSecurityBarHeight: 4px;
+syynSecurityRowHeight: 34px;
+syynSecurityDot: 8px;
+syynSecurityDotSkip: 12px;
+syynSecurityTitleFont: font(15px semibold);
+
+syynVeilIconSize: 200px;
+syynVeilNameFont: font(18px semibold);
+syynVeilNameSkip: 8px;
+syynVeilHintSkip: 22px;
+syynVeilGlowRadius: 340px;
+
 topBarAdmins: IconButton {
 	width: 40px;
 	height: topBarHeight;

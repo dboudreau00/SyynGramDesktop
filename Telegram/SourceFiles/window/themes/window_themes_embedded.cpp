@@ -101,23 +101,11 @@ const auto kColorizeIgnoredKeys = base::flat_set<QLatin1String>{ {
 	qstr("premiumIconBg2"),
 } };
 
-style::colorizer::Color cColor(std::string_view hex) {
-	const auto q = style::ColorFromHex(hex);
-	auto hue = int();
-	auto saturation = int();
-	auto value = int();
-	q.getHsv(&hue, &saturation, &value);
-	return style::colorizer::Color{ hue, saturation, value };
-}
-
 } // namespace
 
 style::colorizer ColorizerFrom(
 		const EmbeddedScheme &scheme,
 		const QColor &color) {
-	using Color = style::colorizer::Color;
-	using Pair = std::pair<Color, Color>;
-
 	auto result = style::colorizer();
 	result.ignoreKeys = kColorizeIgnoredKeys;
 	result.hueThreshold = 15;
@@ -134,35 +122,11 @@ style::colorizer ColorizerFrom(
 		result.lightnessMax = 160;
 		break;
 	case EmbeddedType::DayBlue:
-		result.lightnessMax = 160;
+		result.lightnessMin = 110;
+		result.lightnessMax = 170;
 		break;
 	case EmbeddedType::Night:
-		result.keepContrast = base::flat_map<QLatin1String, Pair>{ {
-			//{ qstr("windowFgActive"), Pair{ cColor("5288c1"), cColor("17212b") } }, // windowBgActive
-			{ qstr("activeButtonFg"), Pair{ cColor("2f6ea5"), cColor("17212b") } }, // activeButtonBg
-			{ qstr("profileVerifiedCheckFg"), Pair{ cColor("5288c1"), cColor("17212b") } }, // profileVerifiedCheckBg
-			{ qstr("overviewCheckFgActive"), Pair{ cColor("5288c1"), cColor("17212b") } }, // overviewCheckBgActive
-			{ qstr("historyFileInIconFg"), Pair{ cColor("3f96d0"), cColor("182533") } }, // msgFileInBg, msgInBg
-			{ qstr("historyFileInIconFgSelected"), Pair{ cColor("6ab4f4"), cColor("2e70a5") } }, // msgFileInBgSelected, msgInBgSelected
-			{ qstr("historyFileInRadialFg"), Pair{ cColor("3f96d0"), cColor("182533") } }, // msgFileInBg, msgInBg
-			{ qstr("historyFileInRadialFgSelected"), Pair{ cColor("6ab4f4"), cColor("2e70a5") } }, // msgFileInBgSelected, msgInBgSelected
-			{ qstr("historyFileOutIconFg"), Pair{ cColor("4c9ce2"), cColor("2b5278") } }, // msgFileOutBg, msgOutBg
-			{ qstr("historyFileOutIconFgSelected"), Pair{ cColor("58abf3"), cColor("2e70a5") } }, // msgFileOutBgSelected, msgOutBgSelected
-			{ qstr("historyFileOutRadialFg"), Pair{ cColor("4c9ce2"), cColor("2b5278") } }, // msgFileOutBg, msgOutBg
-			{ qstr("historyFileOutRadialFgSelected"), Pair{ cColor("58abf3"), cColor("2e70a5") } }, // msgFileOutBgSelected, msgOutBgSelected
-		} };
-		result.lightnessMin = 64;
-		break;
 	case EmbeddedType::NightGreen:
-		result.keepContrast = base::flat_map<QLatin1String, Pair>{ {
-			//{ qstr("windowFgActive"), Pair{ cColor("3fc1b0"), cColor("282e33") } }, // windowBgActive, windowBg
-			{ qstr("activeButtonFg"), Pair{ cColor("2da192"), cColor("282e33") } }, // activeButtonBg, windowBg
-			{ qstr("profileVerifiedCheckFg"), Pair{ cColor("3fc1b0"), cColor("282e33") } }, // profileVerifiedCheckBg, windowBg
-			{ qstr("overviewCheckFgActive"), Pair{ cColor("3fc1b0"), cColor("282e33") } }, // overviewCheckBgActive
-			// callIconFg is used not only over callAnswerBg,
-			// so this contrast-forcing breaks other buttons.
-			//{ qstr("callIconFg"), Pair{ cColor("5ad1c1"), cColor("1b1f23") } }, // callAnswerBg, callBgOpaque
-		} };
 		result.lightnessMin = 64;
 		break;
 	}
@@ -254,36 +218,36 @@ std::vector<EmbeddedScheme> EmbeddedThemes() {
 		},
 		EmbeddedScheme{
 			EmbeddedType::DayBlue,
-			qColor("7ec4ea"),
-			qColor("d7f0ff"),
-			qColor("ffffff"),
-			qColor("d7f0ff"),
-			qColor("ffffff"),
+			qColor("efe6d2"),
+			qColor("f1d589"),
+			qColor("fffdf8"),
+			qColor("a9842f"),
+			qColor("8a7c62"),
 			name(tr::lng_settings_theme_day),
 			":/gui/day-blue.tdesktop-theme",
-			qColor("40a7e3")
+			qColor("c9a24a")
 		},
 		EmbeddedScheme{
 			EmbeddedType::Night,
-			qColor("485761"),
-			qColor("5ca7d4"),
-			qColor("6b808d"),
-			qColor("6b808d"),
-			qColor("5ca7d4"),
+			qColor("0b0907"),
+			qColor("c9a24a"),
+			qColor("1d1811"),
+			qColor("e2b85a"),
+			qColor("6c604c"),
 			name(tr::lng_settings_theme_tinted),
 			":/gui/night.tdesktop-theme",
-			qColor("5288c1")
+			qColor("c9a24a")
 		},
 		EmbeddedScheme{
 			EmbeddedType::NightGreen,
-			qColor("485761"),
-			qColor("6b808d"),
-			qColor("6b808d"),
-			qColor("6b808d"),
-			qColor("75bfb5"),
+			qColor("000000"),
+			qColor("c9a24a"),
+			qColor("15110c"),
+			qColor("e2b85a"),
+			qColor("6c604c"),
 			name(tr::lng_settings_theme_night),
 			":/gui/night-green.tdesktop-theme",
-			qColor("3fc1b0")
+			qColor("c9a24a")
 		},
 	};
 }
@@ -295,14 +259,14 @@ std::vector<QColor> DefaultAccentColors(EmbeddedType type) {
 	switch (type) {
 	case EmbeddedType::DayBlue:
 		return {
-			qColor("45bce7"),
-			qColor("52b440"),
-			qColor("d46c99"),
-			qColor("df8a49"),
-			qColor("9978c8"),
-			qColor("c55245"),
-			qColor("687b98"),
-			qColor("dea922"),
+			qColor("c9a24a"),
+			qColor("d4793f"),
+			qColor("c1627f"),
+			qColor("6f9e5e"),
+			qColor("4f8fa8"),
+			qColor("8e78c2"),
+			qColor("8a7c62"),
+			qColor("c0504a"),
 		};
 	case EmbeddedType::Default:
 		return {
@@ -316,26 +280,16 @@ std::vector<QColor> DefaultAccentColors(EmbeddedType type) {
 			qColor("dea922"),
 		};
 	case EmbeddedType::Night:
-		return {
-			qColor("58bfe8"),
-			qColor("466f42"),
-			qColor("aa6084"),
-			qColor("a46d3c"),
-			qColor("917bbd"),
-			qColor("ab5149"),
-			qColor("697b97"),
-			qColor("9b834b"),
-		};
 	case EmbeddedType::NightGreen:
 		return {
-			qColor("60a8e7"),
-			qColor("4e9c57"),
-			qColor("ca7896"),
-			qColor("cc925c"),
-			qColor("a58ed2"),
-			qColor("d27570"),
-			qColor("7b8799"),
-			qColor("cbac67"),
+			qColor("e2b85a"),
+			qColor("d9825b"),
+			qColor("c97b8e"),
+			qColor("8fb58a"),
+			qColor("6fa9be"),
+			qColor("a58bd0"),
+			qColor("b8a988"),
+			qColor("d96a5b"),
 		};
 	}
 	Unexpected("Type in Window::Theme::AccentColors.");

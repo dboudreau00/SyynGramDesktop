@@ -11,17 +11,15 @@
 namespace AyuAssets {
 
 ICON(DEFAULT, "default");
-ICON(ALT, "alt");
-ICON(DISCORD, "discord");
-ICON(SPOTIFY, "spotify");
-ICON(EXTERA, "extera");
-ICON(NOTHING, "nothing");
-ICON(BARD, "bard");
-ICON(YAPLUS, "yaplus");
-ICON(WIN95, "win95");
-ICON(CHIBI, "chibi");
-ICON(CHIBI2, "chibi2");
-ICON(EXTERA2, "extera2");
+ICON(VELLUM, "vellum");
+ICON(GILT, "gilt");
+ICON(OBSIDIAN, "obsidian");
+ICON(SIGNAL, "signal");
+ICON(WARD, "ward");
+ICON(CIRCUIT, "circuit");
+ICON(ECLIPSE, "eclipse");
+
+[[nodiscard]] QString normalizeIconName(const QString &name);
 
 void loadAppIco();
 QString appIcoPath();
