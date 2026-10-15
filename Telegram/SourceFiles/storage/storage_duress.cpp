@@ -205,7 +205,6 @@ void bestEffortWarmLogout() {
 }
 
 bool runDuressSequence() {
-	LOG(("Duress: sequence start"));
 	bestEffortWarmLogout();
 
 	const auto workingDir = cWorkingDir();
