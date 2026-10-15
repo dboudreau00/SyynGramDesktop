@@ -6,7 +6,6 @@ Phase 2: Windows self-uninstall / purge helper after duress wipe.
 
 #include "core/data_folder.h"
 #include "storage/storage_duress_inventory.h"
-#include "logs.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
@@ -129,9 +128,7 @@ void schedulePurge(
 		args->flags |= CREATE_NO_WINDOW;
 		args->inheritHandles = false; // the helper must not keep this process's open log files alive
 	});
-	if (!process.startDetached()) {
-		LOG(("Duress: the purge helper did not start."));
-	}
+	process.startDetached();
 }
 
 } // namespace Platform::DuressUninstall

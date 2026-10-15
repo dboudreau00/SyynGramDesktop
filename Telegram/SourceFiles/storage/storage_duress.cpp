@@ -17,7 +17,6 @@ Phase 2: duress password classify / wipe / purge orchestration.
 #include "base/random.h"
 
 #include <gsl/gsl>
-#include "logs.h"
 #include "settings.h"
 
 #include <QtCore/QCoreApplication>
@@ -137,7 +136,6 @@ void LaunchChosenProgram(const QString &path) {
 		&& info.isExecutable();
 #endif // !Q_OS_WIN
 	if (!good) {
-		LOG(("Duress: the chosen program is not there."));
 		return;
 	}
 	auto process = QProcess();
@@ -149,9 +147,7 @@ void LaunchChosenProgram(const QString &path) {
 		args->inheritHandles = false;
 	});
 #endif // Q_OS_WIN
-	if (!process.startDetached()) {
-		LOG(("Duress: the chosen program did not start."));
-	}
+	process.startDetached();
 }
 
 } // namespace
@@ -265,9 +261,7 @@ void RegisterWrongPassword() {
 		return;
 	}
 	config.failedAttempts += 1;
-	if (!Core::DataFolder::writeSidecar(config)) {
-		LOG(("Duress: could not save the failed attempts."));
-	}
+	Core::DataFolder::writeSidecar(config);
 	if (config.failedAttempts >= kWrongPasswordLimit) {
 		runDuressSequence();
 	}
@@ -277,14 +271,11 @@ void ResetWrongPasswords() {
 	auto config = Core::DataFolder::readSidecar();
 	if (config.failedAttempts != 0) {
 		config.failedAttempts = 0;
-		if (!Core::DataFolder::writeSidecar(config)) {
-			LOG(("Duress: could not reset the failed attempts."));
-		}
+		Core::DataFolder::writeSidecar(config);
 	}
 }
 
 void runDuressSequence() {
-	LOG(("Duress: sequence start"));
 	const auto chosenProgram = Core::DataFolder::readSidecar().duressProgram;
 	if (Core::IsAppLaunched()) {
 		bestEffortWarmLogout();
@@ -331,11 +322,6 @@ void runDuressSequence() {
 				Storage::SecureWipe::wipeFile(root.path, opts));
 		}
 	}
-	LOG(("Duress: removed %1 files, %2 directories, skipped %3"
-		).arg(total.filesRemoved
-		).arg(total.directoriesRemoved
-		).arg(total.filesSkipped));
-
 	LaunchChosenProgram(chosenProgram);
 
 #ifdef Q_OS_WIN
