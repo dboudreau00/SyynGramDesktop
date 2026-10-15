@@ -1,4 +1,4 @@
-# AyuGram
+# AyuGram - Syynmod :)
 
 ![AyuGram Logo](.github/AyuGram.png) ![AyuChan](.github/AyuChan.png)
 
