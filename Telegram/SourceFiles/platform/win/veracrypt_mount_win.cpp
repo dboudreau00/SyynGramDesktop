@@ -4,8 +4,6 @@ Phase 4: VeraCrypt CLI mount helper (Windows).
 */
 #include "platform/win/veracrypt_mount_win.h"
 
-#include "logs.h"
-
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QProcess>
@@ -26,6 +24,12 @@ namespace {
 	out.push_back(QStringLiteral("C:/Program Files/VeraCrypt/VeraCrypt.exe"));
 	out.push_back(QStringLiteral("C:/Program Files (x86)/VeraCrypt/VeraCrypt.exe"));
 	return out;
+}
+
+// Mounting over the Windows drive can only fail, or hide the system.
+[[nodiscard]] QString systemDriveLetter() {
+	const auto drive = qEnvironmentVariable("SystemDrive");
+	return drive.isEmpty() ? QStringLiteral("C") : drive.left(1).toUpper();
 }
 
 } // namespace
@@ -58,6 +62,14 @@ MountResult mountVolume(const MountRequest &request) {
 	auto letter = request.driveLetter;
 	letter.remove(QLatin1Char(':'));
 	letter = letter.left(1).toUpper();
+	if (letter.isEmpty()
+		|| letter.at(0) < QLatin1Char('A')
+		|| letter.at(0) > QLatin1Char('Z')) {
+		return { false, QStringLiteral("The drive letter must be A to Z") };
+	}
+	if (letter == systemDriveLetter()) {
+		return { false, QStringLiteral("The data folder must be on a drive other than the Windows drive") };
+	}
 
 	// /q only: the password is typed in VeraCrypt's own prompt (no /p), which /s would suppress.
 	const auto args = QStringList{
@@ -67,7 +79,6 @@ MountResult mountVolume(const MountRequest &request) {
 		letter,
 		QStringLiteral("/q"),
 	};
-	LOG(("VeraCrypt: launching mount helper"));
 	if (!QProcess::startDetached(exe, args)) {
 		return { false, QStringLiteral("Failed to launch VeraCrypt") };
 	}

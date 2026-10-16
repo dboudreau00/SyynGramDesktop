@@ -441,9 +441,7 @@ void AyuSettings::reset() {
 	auto sidecar = Core::DataFolder::readSidecar();
 	sidecar.wipeAfterFailures = false;
 	sidecar.duressProgram.clear();
-	if (!Core::DataFolder::writeSidecar(sidecar)) {
-		LOG(("DataFolder: could not write the sidecar, the wipe switch may still be armed."));
-	}
+	static_cast<void>(Core::DataFolder::writeSidecar(sidecar));
 	Storage::Duress::ResetWrongPasswords();
 	save();
 }
@@ -1109,9 +1107,7 @@ void AyuSettings::setStrictDataFolder(bool val) {
 	_strictDataFolder = val;
 	auto sidecar = Core::DataFolder::readSidecar();
 	sidecar.strictDataFolder = val;
-	if (!Core::DataFolder::writeSidecar(sidecar)) {
-		LOG(("DataFolder: could not write the sidecar, strict mode is not enforced at start."));
-	}
+	static_cast<void>(Core::DataFolder::writeSidecar(sidecar));
 	save();
 }
 
@@ -1139,7 +1135,6 @@ void AyuSettings::setWipeAfterFailures(bool val) {
 	auto sidecar = Core::DataFolder::readSidecar();
 	sidecar.wipeAfterFailures = val;
 	if (!Core::DataFolder::writeSidecar(sidecar)) {
-		LOG(("DataFolder: could not write the sidecar, the wipe switch is not in effect."));
 		return;
 	}
 	Storage::Duress::ResetWrongPasswords();
@@ -1172,9 +1167,7 @@ void AyuSettings::setDuressLaunchPath(const QString &val) {
 	if (_duressLaunchPath.current() == val) return;
 	auto sidecar = Core::DataFolder::readSidecar();
 	sidecar.duressProgram = val;
-	if (!Core::DataFolder::writeSidecar(sidecar)) {
-		LOG(("DataFolder: could not write the sidecar, the duress program is not in effect."));
-	}
+	static_cast<void>(Core::DataFolder::writeSidecar(sidecar));
 	_duressLaunchPath = val;
 	save();
 }

@@ -239,7 +239,6 @@ bool tryAutoMount() {
 		.volumePath = sidecar.veracryptVolume,
 		.driveLetter = drive,
 	});
-	LOG(("DataFolder: auto-mount: %1").arg(mount.message));
 	if (!mount.ok) {
 		return false;
 	}
