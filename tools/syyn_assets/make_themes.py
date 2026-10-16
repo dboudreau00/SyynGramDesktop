@@ -279,7 +279,7 @@ def vellum_roles() -> dict[str, str]:
         "historyComposeButtonBgRipple": ripple, "botKbBg": over, "botKbDownBg": ripple,
         "overviewCheckFgActive": ink2, "overviewPhotoSelectOverlay": "#C9A24A33",
         "profileStatusFgOver": sub, "profileVerifiedCheckFg": "#FFFFFF", "profileAdminStartFg": link,
-        "toastFg": "#FFFFFF", "youtubePlayIconFg": "#FFFFFF",
+        "toastBg": "#000000b2", "toastFg": "#FFFFFF", "youtubePlayIconFg": "#FFFFFF",
         "mainMenuCoverBg": "#E6DCC6", "mainMenuCoverFg": ink2, "mainMenuCloudBg": G500,
         "mediaPlayerDisabledFg": "#A89B80",
         "mediaviewFileExtFg": "#FFFFFF", "mediaviewMenuFg": "#FFFFFF", "mediaviewControlFg": "#FFFFFF",
@@ -446,10 +446,23 @@ def build_palette(
     if undecided:
         raise SystemExit("keys depending on a flipped core key have no role: " + ", ".join(undecided))
 
+    appended = sorted(k for k in roles if k not in keys)
+    # A key the stock file never defines is written just before the first line that points at it,
+    # because the loader only resolves an alias to a key defined earlier in the file.
+    first_use: dict[int, list[str]] = {}
+    placed: set[str] = set()
+    for index, (_, _, key, val, _) in enumerate(template):
+        if key and val in appended and val not in placed:
+            first_use.setdefault(index, []).append(val)
+            placed.add(val)
+
     out_lines = []
     final: dict[str, str] = {}
     auto_mapped: list[str] = []
-    for raw, indent, key, val, tail in template:
+    for index, (raw, indent, key, val, tail) in enumerate(template):
+        for early in first_use.get(index, []):
+            final[early] = roles[early]
+            out_lines.append(f"{early}: {roles[early]};")
         if not key:
             out_lines.append(raw)
             continue
@@ -464,10 +477,10 @@ def build_palette(
                 auto_mapped.append(key)
         final[key] = new
         out_lines.append(f"{indent}{key}: {new};{tail}")
-    appended = sorted(k for k in roles if k not in keys)
     for key in appended:
-        final[key] = roles[key]
-        out_lines.append(f"{key}: {roles[key]};")
+        if key not in placed:
+            final[key] = roles[key]
+            out_lines.append(f"{key}: {roles[key]};")
     return "\n".join(out_lines), final, auto_mapped, appended
 
 
