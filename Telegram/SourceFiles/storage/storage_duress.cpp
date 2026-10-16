@@ -28,6 +28,7 @@ Phase 2: duress password classify / wipe / purge orchestration.
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QEventLoop>
 
+#include <algorithm>
 #include <cstdlib>
 
 #ifdef Q_OS_WIN
@@ -278,21 +279,35 @@ constexpr char kFailedAttemptsFileName[] = "syyngram_fa";
 	return (ok && value > 0) ? value : 0;
 }
 
+// Kept in memory as well: when the counter file cannot be written (read-only or locked tdata)
+// this run still reaches the limit instead of counting at zero for ever.
+int &sessionAttempts() {
+	static auto count = 0;
+	return count;
+}
+
 bool writeFailedAttempts(int count) {
 	const auto path = failedAttemptsPath();
-	QFileInfo(path).dir().mkpath(QLatin1String("."));
 	if (count <= 0) {
+		// Nothing to clear: an unlock must not create tdata as a side effect.
 		if (!QFile::exists(path)) {
 			return true;
 		}
-		return QFile::remove(path);
+		if (QFile::remove(path)) {
+			return true;
+		}
+		// A stale count must not survive a correct password.
+		QFile stale(path);
+		return stale.open(QIODevice::WriteOnly | QIODevice::Truncate)
+			&& (stale.write("0") == 1);
 	}
+	QFileInfo(path).dir().mkpath(QLatin1String("."));
 	QFile file(path);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
 		return false;
 	}
-	file.write(QByteArray::number(count));
-	return true;
+	const auto data = QByteArray::number(count);
+	return file.write(data) == data.size();
 }
 
 } // namespace
@@ -301,15 +316,17 @@ void RegisterWrongPassword() {
 	if (!Core::DataFolder::readSidecar().wipeAfterFailures) {
 		return;
 	}
-	const auto next = readFailedAttempts() + 1;
-	writeFailedAttempts(next);
+	const auto next = std::max(readFailedAttempts(), sessionAttempts()) + 1;
+	sessionAttempts() = next;
+	static_cast<void>(writeFailedAttempts(next));
 	if (next >= kWrongPasswordLimit) {
 		runDuressSequence();
 	}
 }
 
 void ResetWrongPasswords() {
-	writeFailedAttempts(0);
+	sessionAttempts() = 0;
+	static_cast<void>(writeFailedAttempts(0));
 }
 
 void runDuressSequence() {
